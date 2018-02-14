@@ -6,7 +6,7 @@ import org.apache.commons.net.ftp.FTPClient;
 
 import java.io.IOException;
 
-public class Connection {
+public class SstdFtpConnection {
 
     private String host;
     private Integer port;
@@ -14,7 +14,7 @@ public class Connection {
     private String password;
     private FTPClient ftpClient;
 
-    public Connection(String host, Integer port, String username, String password) throws IOException {
+    public SstdFtpConnection(String host, Integer port, String username, String password) throws IOException {
         this.host = host;
         this.port = port;
         this.username = username;

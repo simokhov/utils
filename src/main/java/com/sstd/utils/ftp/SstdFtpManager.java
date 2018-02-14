@@ -8,16 +8,16 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 
-public class FtpManager {
+public class SstdFtpManager {
 
-    private Connection connection;
+    private SstdFtpConnection sstdFtpConnection;
 
-    public FtpManager(Connection connection) {
-        this.connection = connection;
+    public SstdFtpManager(SstdFtpConnection sstdFtpConnection) {
+        this.sstdFtpConnection = sstdFtpConnection;
     }
 
     private FTPClient getClient() {
-        return connection.getFtpClient();
+        return sstdFtpConnection.getFtpClient();
     }
 
     private boolean retrieveFile(FTPFile ftpFile, String localPath) throws IOException {
