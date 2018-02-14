@@ -8,6 +8,11 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 
+/**
+ * SstdFtpManager class
+ * Used to retrieve files from FTP
+ * You must inject SstdFtpConnection on construct
+ */
 public class SstdFtpManager {
 
     private SstdFtpConnection sstdFtpConnection;
