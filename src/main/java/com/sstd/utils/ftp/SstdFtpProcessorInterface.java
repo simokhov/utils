@@ -12,6 +12,7 @@ public interface SstdFtpProcessorInterface {
      * @param ftpFile FTPFile instance
      * @return boolean
      */
+    boolean isValid(String ftpFile);
     boolean isValid(FTPFile ftpFile);
 
     /**
@@ -19,14 +20,14 @@ public interface SstdFtpProcessorInterface {
      *
      * @param ftpFile FTPFile instance
      */
-    void beforeRetrieve(FTPFile ftpFile);
+    void beforeRetrieve(String ftpFile);
 
     /**
      * Method to do some work after downloading file
      *
      * @param ftpFile FTPFile instance
      */
-    void afterRetrieve(FTPFile ftpFile);
+    void afterRetrieve(String ftpFile);
 
 
 }

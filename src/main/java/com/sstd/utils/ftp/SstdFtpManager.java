@@ -2,12 +2,10 @@ package com.sstd.utils.ftp;
 
 import org.apache.commons.net.ftp.FTPClient;
 import org.apache.commons.net.ftp.FTPFile;
-import org.apache.commons.net.ftp.FTPListParseEngine;
 
-import java.io.BufferedOutputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
+import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * SstdFtpManager class
@@ -42,13 +40,27 @@ public class SstdFtpManager {
      *                     an I/O error occurs while either sending a
      *                     command to the server or receiving a reply from the server.
      */
-    private boolean retrieveFile(FTPFile ftpFile, String localPath) throws IOException {
+    private boolean retrieveFile(String ftpFile, String localPath) throws IOException {
         OutputStream outputStream = new BufferedOutputStream(new FileOutputStream(localPath));
-        return getClient().retrieveFile(ftpFile.getLink(), outputStream);
+        return getClient().retrieveFile(ftpFile, outputStream);
+    }
+
+    public void getRemoteFileList(List<String> fileList, File destination) throws IOException {
+        if (!destination.exists() ||
+                !destination.isDirectory() ||
+                !destination.canWrite()
+                ) {
+            throw new IOException("Destination folder does not exists or not is directory or no write permission");
+        }
+
+        for (String file : fileList) {
+            getRemoteFile(file, destination.getAbsolutePath());
+        }
     }
 
     /**
-     * @param ftpFile   FTPFile
+     * @param remotePath String
+     *                   Path to remote file
      * @param localPath String
      *                  Path to store local file
      *                  Can Throw FileNotFoundException
@@ -57,39 +69,59 @@ public class SstdFtpManager {
      *                     an I/O error occurs while either sending a
      *                     command to the server or receiving a reply from the server.
      */
-    public boolean getRemoteFile(FTPFile ftpFile, String localPath) throws IOException {
+    public boolean getRemoteFile(String remotePath, String localPath) throws IOException {
 
         boolean result = false;
 
         if (sstdFtpProcessor != null) {
 
             //        Before downloading stuff
-            sstdFtpProcessor.beforeRetrieve(ftpFile);
+            sstdFtpProcessor.beforeRetrieve(remotePath);
 
             // Validate file and retrieve from remote host
-            if (sstdFtpProcessor.isValid(ftpFile)) {
-                result = retrieveFile(ftpFile, localPath);
+            if (sstdFtpProcessor.isValid(remotePath)) {
+                result = retrieveFile(remotePath, localPath);
             }
 
             //        After downloading stuff
-            sstdFtpProcessor.afterRetrieve(ftpFile);
+            sstdFtpProcessor.afterRetrieve(remotePath);
         } else {
-            result = retrieveFile(ftpFile, localPath);
+            result = retrieveFile(remotePath, localPath);
         }
 
         return result;
     }
 
     /**
-     * Get list of files in remote directory;
      *
      * @param remotePath String
-     *                   Remote path to directory
-     * @return List of FTPFile
-     * @throws IOException if I/O error occurs while sending command to the server
+     * @param recursive boolean flag
+     * @return List of strings. Contains full relative paths
+     * @throws IOException if I/O error occurs
      */
-    private FTPFile[] getList(String remotePath) throws IOException {
-        FTPListParseEngine ftpListParseEngine = getClient().initiateListParsing(remotePath);
-        return ftpListParseEngine.getFiles();
+    public List<String> getValidFileList(String remotePath, boolean recursive) throws IOException {
+        List<String> files = new ArrayList<>();
+        FTPFile[] ftpFiles = getClient().listFiles(remotePath);
+        for (FTPFile ftpFile : ftpFiles) {
+            if (ftpFile.isFile() && sstdFtpProcessor.isValid(ftpFile)) {
+                files.add(remotePath + File.separator + ftpFile.getName());
+            } else if (ftpFile.isDirectory() && recursive) {
+                files.addAll(getValidFileList(remotePath + File.separator + ftpFile.getName(), true));
+            }
+        }
+        return files;
     }
+
+    /**
+     * Get instance of FTPFile by path
+     * @param remotePath String
+     * @return FTPFile|null
+     * @throws IOException if I/O error occurs
+     */
+    public FTPFile getFtpFileInfoByRemotePath(String remotePath) throws IOException {
+        FTPFile[] ftpFiles = getClient().listFiles(remotePath);
+        if (ftpFiles.length == 1) return ftpFiles[0];
+        else return null;
+    }
+
 }
