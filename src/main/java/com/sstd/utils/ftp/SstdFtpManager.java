@@ -2,6 +2,7 @@ package com.sstd.utils.ftp;
 
 import org.apache.commons.net.ftp.FTPClient;
 import org.apache.commons.net.ftp.FTPFile;
+import org.apache.commons.net.ftp.FTPListParseEngine;
 
 import java.io.BufferedOutputStream;
 import java.io.FileOutputStream;
@@ -77,5 +78,18 @@ public class SstdFtpManager {
         }
 
         return result;
+    }
+
+    /**
+     * Get list of files in remote directory;
+     *
+     * @param remotePath String
+     *                   Remote path to directory
+     * @return List of FTPFile
+     * @throws IOException if I/O error occurs while sending command to the server
+     */
+    private FTPFile[] getList(String remotePath) throws IOException {
+        FTPListParseEngine ftpListParseEngine = getClient().initiateListParsing(remotePath);
+        return ftpListParseEngine.getFiles();
     }
 }
