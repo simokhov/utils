@@ -64,14 +64,12 @@ public class SstdFtpManager {
      * @param localPath String
      *                  Path to store local file
      *                  Can Throw FileNotFoundException
-     * @return boolean
      * @throws IOException Throws if local FileNotFoundException or
      *                     an I/O error occurs while either sending a
      *                     command to the server or receiving a reply from the server.
      */
-    public boolean getRemoteFile(String remotePath, String localPath) throws IOException {
+    private void getRemoteFile(String remotePath, String localPath) throws IOException {
 
-        boolean result = false;
 
         if (sstdFtpProcessor != null) {
 
@@ -80,16 +78,15 @@ public class SstdFtpManager {
 
             // Validate file and retrieve from remote host
             if (sstdFtpProcessor.isValid(remotePath)) {
-                result = retrieveFile(remotePath, localPath);
+                retrieveFile(remotePath, localPath);
             }
 
             //        After downloading stuff
             sstdFtpProcessor.afterRetrieve(remotePath);
         } else {
-            result = retrieveFile(remotePath, localPath);
+            retrieveFile(remotePath, localPath);
         }
 
-        return result;
     }
 
     /**
