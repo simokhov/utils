@@ -32,6 +32,15 @@ public class SstdFtpManager {
         this.executorService = executorService;
     }
 
+    public SstdFtpManager(SstdFtpConnection sstdFtpConnection, SstdFtpProcessorInterface sstdFtpProcessor) {
+        this.sstdFtpConnection = sstdFtpConnection;
+        this.sstdFtpProcessor = sstdFtpProcessor;
+    }
+
+    public SstdFtpManager(SstdFtpConnection sstdFtpConnection) {
+        this.sstdFtpConnection = sstdFtpConnection;
+    }
+
     private FTPClient getClient() {
         return sstdFtpConnection.getFtpClient();
     }
