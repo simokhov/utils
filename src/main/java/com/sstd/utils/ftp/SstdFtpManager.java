@@ -6,6 +6,9 @@ import org.apache.commons.net.ftp.FTPFile;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 
 /**
  * SstdFtpManager class
@@ -16,14 +19,17 @@ public class SstdFtpManager {
 
     private SstdFtpConnection sstdFtpConnection;
     private SstdFtpProcessorInterface sstdFtpProcessor;
+    private ExecutorService executorService;
 
-    public SstdFtpManager(SstdFtpConnection sstdFtpConnection) {
+    public SstdFtpManager(SstdFtpConnection sstdFtpConnection, ExecutorService executorService) {
         this.sstdFtpConnection = sstdFtpConnection;
+        this.executorService = executorService;
     }
 
-    public SstdFtpManager(SstdFtpConnection sstdFtpConnection, SstdFtpProcessorInterface sstdFtpProcessor) {
+    public SstdFtpManager(SstdFtpConnection sstdFtpConnection, SstdFtpProcessorInterface sstdFtpProcessor, ExecutorService executorService) {
         this.sstdFtpConnection = sstdFtpConnection;
         this.sstdFtpProcessor = sstdFtpProcessor;
+        this.executorService = executorService;
     }
 
     private FTPClient getClient() {
@@ -47,7 +53,7 @@ public class SstdFtpManager {
         return result;
     }
 
-    public List<String> getRemoteFileList(List<String> fileList, File destinationFolder) throws IOException {
+    private List<String> getRemoteFileList(List<String> fileList, File destinationFolder) throws IOException {
         List<String> result = new ArrayList<>();
 
         if (!destinationFolder.exists() ||
@@ -59,11 +65,13 @@ public class SstdFtpManager {
 
         for (String file : fileList) {
             FTPFile ftpFile = getFtpFileInfoByRemotePath(file);
-            String destination = destinationFolder.getAbsolutePath() + File.separator + ftpFile.getName();
-            getRemoteFile(file, destination);
-            File localFile = new File(destination);
-            if (localFile.exists()) {
-                result.add(destination);
+            if (ftpFile != null) {
+                String destination = destinationFolder.getAbsolutePath() + File.separator + ftpFile.getName();
+                getRemoteFile(file, destination);
+                File localFile = new File(destination);
+                if (localFile.exists()) {
+                    result.add(destination);
+                }
             }
         }
 
@@ -128,10 +136,51 @@ public class SstdFtpManager {
      * @return FTPFile|null
      * @throws IOException if I/O error occurs
      */
-    public FTPFile getFtpFileInfoByRemotePath(String remotePath) throws IOException {
+    private FTPFile getFtpFileInfoByRemotePath(String remotePath) throws IOException {
         FTPFile[] ftpFiles = getClient().listFiles(remotePath);
         if (ftpFiles.length == 1) return ftpFiles[0];
         else return null;
     }
 
+    /**
+     * @param sourcePath      String relative path on FTP  to download
+     * @param destinationPath String Path to store files
+     * @param recursive       download subdirectories
+     * @return Future
+     */
+    public Future<List<String>> task(String sourcePath, String destinationPath, boolean recursive) {
+        FtpTaskThread ftpTaskThread = new FtpTaskThread(this, sourcePath, destinationPath, recursive);
+        return executorService.submit(ftpTaskThread);
+    }
+
+    public ExecutorService getExecutorService() {
+        return executorService;
+    }
+
+    private class FtpTaskThread implements Callable<List<String>> {
+
+        private SstdFtpManager ftpManager;
+        private String sourcePath;
+        private String destinationPath;
+        private boolean recursive;
+
+        FtpTaskThread(SstdFtpManager ftpManager, String sourcePath, String destinationPath, boolean recursive) {
+            this.ftpManager = ftpManager;
+            this.sourcePath = sourcePath;
+            this.destinationPath = destinationPath;
+            this.recursive = recursive;
+        }
+
+        @Override
+        public List<String> call() {
+            List<String> result = new ArrayList<>();
+            try {
+                List<String> validFileList = ftpManager.getValidFileList(sourcePath, recursive);
+                result.addAll(ftpManager.getRemoteFileList(validFileList, new File(destinationPath)));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            return result;
+        }
+    }
 }
