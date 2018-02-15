@@ -9,7 +9,7 @@ public interface SstdFtpProcessorInterface {
      * return true if file is valid
      * and must be downloaded
      *
-     * @param ftpFile FTPFile instance
+     * @param ftpFile String path | FTPFile instance
      * @return boolean
      */
     boolean isValid(String ftpFile);
@@ -18,14 +18,14 @@ public interface SstdFtpProcessorInterface {
     /**
      * Method to do some work before downloading file
      *
-     * @param ftpFile FTPFile instance
+     * @param ftpFile String path
      */
     void beforeRetrieve(String ftpFile);
 
     /**
      * Method to do some work after downloading file
      *
-     * @param ftpFile FTPFile instance
+     * @param ftpFile String path
      */
     void afterRetrieve(String ftpFile);
 
