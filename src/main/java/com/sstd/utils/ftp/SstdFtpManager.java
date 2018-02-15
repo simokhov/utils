@@ -142,13 +142,23 @@ public class SstdFtpManager {
         else return null;
     }
 
+    public List<String> syncTask(String sourcePath, String destinationPath, boolean recursive) throws IOException {
+        List<String> validFileList = getValidFileList(sourcePath, recursive);
+        return getRemoteFileList(validFileList, new File(destinationPath));
+    }
+
     /**
      * @param sourcePath      String relative path on FTP  to download
      * @param destinationPath String Path to store files
      * @param recursive       download subdirectories
      * @return Future
      */
-    public Future<List<String>> task(String sourcePath, String destinationPath, boolean recursive) {
+    public Future<List<String>> asyncTask(String sourcePath, String destinationPath, boolean recursive) {
+
+        if (executorService == null) {
+            throw new RuntimeException("No thread executor injected");
+        }
+
         FtpTaskThread ftpTaskThread = new FtpTaskThread(this, sourcePath, destinationPath, recursive);
         return executorService.submit(ftpTaskThread);
     }
