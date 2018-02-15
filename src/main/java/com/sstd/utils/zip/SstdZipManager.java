@@ -11,6 +11,11 @@ public class SstdZipManager {
     // Buffer size for stream
     private static final int BUFFER_SIZE = 4096;
 
+    public static List<String> unpack(String sourcePath, String destinationPath)
+            throws IOException {
+        return unpack(sourcePath, destinationPath, null);
+    }
+
     public static List<String> unpack(String sourcePath, String destinationPath, SstdZipProcessorInterface zipProcessor)
             throws IOException {
         List<String> result = new ArrayList<>();
