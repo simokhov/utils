@@ -11,11 +11,27 @@ public class SstdZipManager {
     // Buffer size for stream
     private static final int BUFFER_SIZE = 4096;
 
+    /**
+     * Unpack files without processor
+     *
+     * @param sourcePath      String path to zip archive
+     * @param destinationPath String destination folder
+     * @return List of strings with unpacked files path
+     * @throws IOException If I/O error occurs
+     */
     public static List<String> unpack(String sourcePath, String destinationPath)
             throws IOException {
         return unpack(sourcePath, destinationPath, null);
     }
 
+    /**
+     * Unpack files without processor
+     * @param sourcePath String path to zip archive
+     * @param destinationPath String destination folder
+     * @param zipProcessor SstdZipProcessorInterface instance
+     * @return List of strings with unpacked files path
+     * @throws IOException If I/O error occurs
+     */
     public static List<String> unpack(String sourcePath, String destinationPath, SstdZipProcessorInterface zipProcessor)
             throws IOException {
         List<String> result = new ArrayList<>();
@@ -25,27 +41,30 @@ public class SstdZipManager {
 
             String filePath = destinationPath + File.separator + entry.getName();
 
+            // if processor initiated
             if (zipProcessor != null) {
                 zipProcessor.beforeUnpack(entry.getName());
                 if (zipProcessor.isValid(entry.getName())) {
                     extractFile(zipInputStream, filePath);
+                    zipInputStream.closeEntry();
                 } else {
                     // if not valid file - get next
+                    entry = zipInputStream.getNextEntry();
                     continue;
                 }
-
                 zipProcessor.afterUnpack(filePath);
                 result.add(filePath);
-
             } else {
                 extractFile(zipInputStream, filePath);
+                zipInputStream.closeEntry();
             }
-
+            entry = zipInputStream.getNextEntry();
             File file = new File(filePath);
             if (file.exists() && file.isFile()) {
                 result.add(filePath);
             }
         }
+        zipInputStream.close();
         return result;
     }
 

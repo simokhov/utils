@@ -35,28 +35,41 @@ public class SstdFtpManager {
      * @param localPath String
      *                  Path to store local file
      *                  Can Throw FileNotFoundException
-     * @return boolean
+     * @return List of downloaded file's local paths
      * @throws IOException Throws if local FileNotFoundException or
      *                     an I/O error occurs while either sending a
      *                     command to the server or receiving a reply from the server.
      */
     private boolean retrieveFile(String ftpFile, String localPath) throws IOException {
         OutputStream outputStream = new BufferedOutputStream(new FileOutputStream(localPath));
-        return getClient().retrieveFile(ftpFile, outputStream);
+        boolean result = getClient().retrieveFile(ftpFile, outputStream);
+        outputStream.close();
+        return result;
     }
 
-    public void getRemoteFileList(List<String> fileList, File destination) throws IOException {
-        if (!destination.exists() ||
-                !destination.isDirectory() ||
-                !destination.canWrite()
+    public List<String> getRemoteFileList(List<String> fileList, File destinationFolder) throws IOException {
+        List<String> result = new ArrayList<>();
+
+        if (!destinationFolder.exists() ||
+                !destinationFolder.isDirectory() ||
+                !destinationFolder.canWrite()
                 ) {
             throw new IOException("Destination folder does not exists or not is directory or no write permission");
         }
 
         for (String file : fileList) {
-            getRemoteFile(file, destination.getAbsolutePath());
+            FTPFile ftpFile = getFtpFileInfoByRemotePath(file);
+            String destination = destinationFolder.getAbsolutePath() + File.separator + ftpFile.getName();
+            getRemoteFile(file, destination);
+            File localFile = new File(destination);
+            if (localFile.exists()) {
+                result.add(destination);
+            }
         }
+
+        return result;
     }
+
 
     /**
      * @param remotePath String
@@ -100,8 +113,8 @@ public class SstdFtpManager {
         List<String> files = new ArrayList<>();
         FTPFile[] ftpFiles = getClient().listFiles(remotePath);
         for (FTPFile ftpFile : ftpFiles) {
-            if (ftpFile.isFile() && sstdFtpProcessor.isValid(ftpFile)) {
-                files.add(remotePath + File.separator + ftpFile.getName());
+            if (ftpFile.isFile()) {
+                files.add(remotePath);
             } else if (ftpFile.isDirectory() && recursive) {
                 files.addAll(getValidFileList(remotePath + File.separator + ftpFile.getName(), true));
             }
