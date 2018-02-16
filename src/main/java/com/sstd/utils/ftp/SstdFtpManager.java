@@ -126,7 +126,7 @@ public class SstdFtpManager {
      * @return List of strings. Contains full relative paths
      * @throws IOException if I/O error occurs
      */
-    public List<String> getValidFileList(String remotePath, boolean recursive) throws IOException {
+    private List<String> getValidFileList(String remotePath, boolean recursive) throws IOException {
         List<String> files = new ArrayList<>();
         FTPFile[] ftpFiles = getClient().listFiles(remotePath);
         for (FTPFile ftpFile : ftpFiles) {
