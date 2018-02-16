@@ -1,5 +1,7 @@
 package com.sstd.utils.zip;
 
+import com.sstd.utils.SstdProcessorInterface;
+
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -13,17 +15,17 @@ public class SstdZipManager {
 
     // Buffer size for stream
     private static final int BUFFER_SIZE = 4096;
-    private SstdZipProcessorInterface zipProcessor;
+    private SstdProcessorInterface zipProcessor;
     private ExecutorService executorService;
 
     public SstdZipManager() {
     }
 
-    public SstdZipManager(SstdZipProcessorInterface zipProcessorInterface) {
+    public SstdZipManager(SstdProcessorInterface zipProcessorInterface) {
         this.zipProcessor = zipProcessorInterface;
     }
 
-    public SstdZipManager(SstdZipProcessorInterface zipProcessor, ExecutorService executorService) {
+    public SstdZipManager(SstdProcessorInterface zipProcessor, ExecutorService executorService) {
         this.zipProcessor = zipProcessor;
         this.executorService = executorService;
     }
@@ -46,7 +48,7 @@ public class SstdZipManager {
 
             // if processor initiated
             if (zipProcessor != null) {
-                zipProcessor.beforeUnpack(entry.getName());
+                zipProcessor.before(entry.getName());
                 if (zipProcessor.isValid(entry.getName())) {
                     extractFile(zipInputStream, filePath);
                     zipInputStream.closeEntry();
@@ -55,7 +57,7 @@ public class SstdZipManager {
                     entry = zipInputStream.getNextEntry();
                     continue;
                 }
-                zipProcessor.afterUnpack(filePath);
+                zipProcessor.after(filePath);
                 result.add(filePath);
             } else {
                 extractFile(zipInputStream, filePath);

@@ -1,5 +1,6 @@
 package com.sstd.utils.ftp;
 
+import com.sstd.utils.SstdProcessorInterface;
 import org.apache.commons.net.ftp.FTPClient;
 import org.apache.commons.net.ftp.FTPFile;
 
@@ -18,7 +19,7 @@ import java.util.concurrent.Future;
 public class SstdFtpManager {
 
     private SstdFtpConnection sstdFtpConnection;
-    private SstdFtpProcessorInterface sstdFtpProcessor;
+    private SstdProcessorInterface sstdFtpProcessor;
     private ExecutorService executorService;
 
     public SstdFtpManager(SstdFtpConnection sstdFtpConnection, ExecutorService executorService) {
@@ -26,13 +27,13 @@ public class SstdFtpManager {
         this.executorService = executorService;
     }
 
-    public SstdFtpManager(SstdFtpConnection sstdFtpConnection, SstdFtpProcessorInterface sstdFtpProcessor, ExecutorService executorService) {
+    public SstdFtpManager(SstdFtpConnection sstdFtpConnection, SstdProcessorInterface sstdFtpProcessor, ExecutorService executorService) {
         this.sstdFtpConnection = sstdFtpConnection;
         this.sstdFtpProcessor = sstdFtpProcessor;
         this.executorService = executorService;
     }
 
-    public SstdFtpManager(SstdFtpConnection sstdFtpConnection, SstdFtpProcessorInterface sstdFtpProcessor) {
+    public SstdFtpManager(SstdFtpConnection sstdFtpConnection, SstdProcessorInterface sstdFtpProcessor) {
         this.sstdFtpConnection = sstdFtpConnection;
         this.sstdFtpProcessor = sstdFtpProcessor;
     }
@@ -104,7 +105,7 @@ public class SstdFtpManager {
         if (sstdFtpProcessor != null) {
 
             //        Before downloading stuff
-            sstdFtpProcessor.beforeRetrieve(remotePath);
+            sstdFtpProcessor.before(remotePath);
 
             // Validate file and retrieve from remote host
             if (sstdFtpProcessor.isValid(remotePath)) {
@@ -112,7 +113,7 @@ public class SstdFtpManager {
             }
 
             //        After downloading stuff
-            sstdFtpProcessor.afterRetrieve(remotePath);
+            sstdFtpProcessor.after(remotePath);
         } else {
             retrieveFile(remotePath, localPath);
         }
