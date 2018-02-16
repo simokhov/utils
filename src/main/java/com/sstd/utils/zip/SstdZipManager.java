@@ -3,6 +3,9 @@ package com.sstd.utils.zip;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -10,29 +13,29 @@ public class SstdZipManager {
 
     // Buffer size for stream
     private static final int BUFFER_SIZE = 4096;
+    private SstdZipProcessorInterface zipProcessor;
+    private ExecutorService executorService;
 
-    /**
-     * Unpack files without processor
-     *
-     * @param sourcePath      String path to zip archive
-     * @param destinationPath String destination folder
-     * @return List of strings with unpacked files path
-     * @throws IOException If I/O error occurs
-     */
-    public static List<String> unpack(String sourcePath, String destinationPath)
-            throws IOException {
-        return unpack(sourcePath, destinationPath, null);
+    public SstdZipManager() {
+    }
+
+    public SstdZipManager(SstdZipProcessorInterface zipProcessorInterface) {
+        this.zipProcessor = zipProcessorInterface;
+    }
+
+    public SstdZipManager(SstdZipProcessorInterface zipProcessor, ExecutorService executorService) {
+        this.zipProcessor = zipProcessor;
+        this.executorService = executorService;
     }
 
     /**
      * Unpack files without processor
      * @param sourcePath String path to zip archive
      * @param destinationPath String destination folder
-     * @param zipProcessor SstdZipProcessorInterface instance
      * @return List of strings with unpacked files path
      * @throws IOException If I/O error occurs
      */
-    public static List<String> unpack(String sourcePath, String destinationPath, SstdZipProcessorInterface zipProcessor)
+    private List<String> unpack(String sourcePath, String destinationPath)
             throws IOException {
         List<String> result = new ArrayList<>();
         ZipInputStream zipInputStream = new ZipInputStream(new FileInputStream(sourcePath));
@@ -83,5 +86,52 @@ public class SstdZipManager {
             bos.write(bytesIn, 0, read);
         }
         bos.close();
+    }
+
+    /**
+     * Sync unpack zip file to destination
+     *
+     * @param sourcePath      String path to zip
+     * @param destinationPath String path to destination derectory
+     * @return List of unpacked file's paths
+     * @throws IOException if I\O error occurs
+     */
+    public List<String> syncTask(String sourcePath, String destinationPath) throws IOException {
+        return unpack(sourcePath, destinationPath);
+    }
+
+    /**
+     * ASync unpack zip file to destination
+     *
+     * @param sourcePath      String path to zip
+     * @param destinationPath String path to destination derectory
+     * @return Future List of unpacked file's paths
+     */
+    public Future<List<String>> asyncTask(String sourcePath, String destinationPath) {
+        return executorService.submit(new ZipTaskThread(this, sourcePath, destinationPath));
+    }
+
+    private class ZipTaskThread implements Callable<List<String>> {
+
+        private SstdZipManager zipManager;
+        private String sourcePath;
+        private String destinationPath;
+
+        ZipTaskThread(SstdZipManager zipManager, String sourcePath, String destinationPath) {
+            this.zipManager = zipManager;
+            this.sourcePath = sourcePath;
+            this.destinationPath = destinationPath;
+        }
+
+        @Override
+        public List<String> call() {
+            List<String> result = new ArrayList<>();
+            try {
+                result.addAll(zipManager.unpack(sourcePath, destinationPath));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            return result;
+        }
     }
 }
