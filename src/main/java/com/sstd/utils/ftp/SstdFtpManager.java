@@ -113,7 +113,7 @@ public class SstdFtpManager {
             }
 
             //        After downloading stuff
-            sstdFtpProcessor.after(remotePath);
+            sstdFtpProcessor.after(localPath);
         } else {
             retrieveFile(remotePath, localPath);
         }
